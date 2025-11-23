@@ -1,0 +1,124 @@
+version: '3.8'
+
+# Multi-Pool Configuration
+# This setup allows monitoring multiple pool accounts simultaneously
+
+services:
+  # Pool 1 - Main account
+  btcpool-scraper-pool1:
+    build: .
+    container_name: btcpool-scraper-pool1
+    restart: unless-stopped
+    
+    environment:
+      - OBSERVER_URL=https://btcpool.kz/observer-link/4828a3fecdaa48eebfa475021b4e8d8d
+      - DB_PATH=/data/btcpool_data.db
+      - POOL_NAME=pool1
+      - TZ=UTC
+    
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+    
+    command: >
+      sh -c "
+        echo '[POOL1] BTC Pool Scraper started at $(date)';
+        while true; do
+          echo '[POOL1] Running scrape at $(date)';
+          python -u btcpool_scraper_v2.py 2>&1 | tee -a /logs/pool1.log;
+          echo '[POOL1] Waiting 10 minutes...';
+          sleep 600;
+        done
+      "
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    
+    networks:
+      - mining-network
+
+  # Pool 2 - Secondary account (uncomment and configure)
+  # btcpool-scraper-pool2:
+  #   build: .
+  #   container_name: btcpool-scraper-pool2
+  #   restart: unless-stopped
+  #   
+  #   environment:
+  #     - OBSERVER_URL=https://btcpool.kz/observer-link/YOUR_POOL2_ID
+  #     - DB_PATH=/data/btcpool_data.db
+  #     - POOL_NAME=pool2
+  #     - TZ=UTC
+  #   
+  #   volumes:
+  #     - ./data:/data
+  #     - ./logs:/logs
+  #   
+  #   command: >
+  #     sh -c "
+  #       echo '[POOL2] BTC Pool Scraper started at $(date)';
+  #       while true; do
+  #         echo '[POOL2] Running scrape at $(date)';
+  #         python -u btcpool_scraper_v2.py 2>&1 | tee -a /logs/pool2.log;
+  #         echo '[POOL2] Waiting 10 minutes...';
+  #         sleep 600;
+  #       done
+  #     "
+  #   
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: 512M
+  #   
+  #   networks:
+  #     - mining-network
+
+  # Pool 3 - Tertiary account (uncomment and configure)
+  # btcpool-scraper-pool3:
+  #   build: .
+  #   container_name: btcpool-scraper-pool3
+  #   restart: unless-stopped
+  #   
+  #   environment:
+  #     - OBSERVER_URL=https://btcpool.kz/observer-link/YOUR_POOL3_ID
+  #     - DB_PATH=/data/btcpool_data.db
+  #     - POOL_NAME=pool3
+  #     - TZ=UTC
+  #   
+  #   volumes:
+  #     - ./data:/data
+  #     - ./logs:/logs
+  #   
+  #   command: >
+  #     sh -c "
+  #       echo '[POOL3] BTC Pool Scraper started at $(date)';
+  #       while true; do
+  #         echo '[POOL3] Running scrape at $(date)';
+  #         python -u btcpool_scraper_v2.py 2>&1 | tee -a /logs/pool3.log;
+  #         echo '[POOL3] Waiting 10 minutes...';
+  #         sleep 600;
+  #       done
+  #     "
+  #   
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: 512M
+  #   
+  #   networks:
+  #     - mining-network
+
+networks:
+  mining-network:
+    driver: bridge
+    name: mining-network
+    # Connect to existing Antpool network if needed
+    # external: true
+
+volumes:
+  data:
+    driver: local

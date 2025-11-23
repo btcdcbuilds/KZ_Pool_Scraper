@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  btcpool-scraper:
+    build: .
+    container_name: btcpool-scraper
+    restart: unless-stopped
+    
+    environment:
+      # Observer URL - change this for different pools
+      - OBSERVER_URL=https://btcpool.kz/observer-link/4828a3fecdaa48eebfa475021b4e8d8d
+      
+      # Database path (inside container)
+      - DB_PATH=/data/btcpool_data.db
+      
+      # Optional: Supabase credentials
+      # - SUPABASE_URL=https://your-project.supabase.co
+      # - SUPABASE_KEY=your-anon-key
+      
+      # Timezone
+      - TZ=UTC
+    
+    volumes:
+      # Persist database
+      - ./data:/data
+      
+      # Optional: Mount logs
+      - ./logs:/logs
+    
+    # Run every 10 minutes using a simple loop
+    command: >
+      sh -c "
+        echo 'BTC Pool Scraper started at $(date)';
+        while true; do
+          echo '--- Running scrape at $(date) ---';
+          python -u btcpool_scraper_v2.py 2>&1 | tee -a /logs/scraper.log;
+          echo 'Scrape completed. Waiting 10 minutes...';
+          sleep 600;
+        done
+      "
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # Network (optional - for connecting to other services)
+    networks:
+      - mining-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sqlite3; conn = sqlite3.connect('/data/btcpool_data.db'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM pool_summary WHERE timestamp > datetime(\"now\", \"-15 minutes\")'); result = cursor.fetchone()[0]; exit(0 if result > 0 else 1)"]
+      interval: 5m
+      timeout: 30s
+      retries: 3
+      start_period: 30s
+
+  # Optional: Data viewer service (web interface)
+  btcpool-viewer:
+    build: .
+    container_name: btcpool-viewer
+    restart: unless-stopped
+    
+    environment:
+      - DB_PATH=/data/btcpool_data.db
+    
+    volumes:
+      - ./data:/data:ro  # Read-only access
+    
+    command: >
+      sh -c "
+        echo 'Starting data viewer...';
+        while true; do
+          echo '=== Pool Status at $(date) ===';
+          python view_data.py summary;
+          echo '';
+          python view_data.py offline;
+          echo '';
+          sleep 300;
+        done
+      "
+    
+    networks:
+      - mining-network
+    
+    profiles:
+      - viewer  # Only start with: docker-compose --profile viewer up
+
+networks:
+  mining-network:
+    driver: bridge
+    name: mining-network
+
+volumes:
+  data:
+    driver: local

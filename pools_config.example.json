@@ -1,0 +1,25 @@
+{
+  "pools": [
+    {
+      "pool_id": "pool_001",
+      "pool_name": "Example Pool",
+      "observer_url": "https://btcpool.kz/observer-link/YOUR_OBSERVER_ID_HERE",
+      "client_name": "Example Client Ltd",
+      "country": "Kazakhstan",
+      "company": "Your Company Name",
+      "location": "Almaty",
+      "contact_email": "client@example.com",
+      "active": true,
+      "scrape_interval_minutes": 10,
+      "notes": "Example configuration",
+      "tags": ["production", "example"],
+      "created_at": "2025-11-23T00:00:00Z",
+      "updated_at": "2025-11-23T00:00:00Z"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2025-11-23T00:00:00Z",
+    "total_pools": 1
+  }
+}
